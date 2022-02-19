@@ -2,7 +2,6 @@ require('dotenv').config()
 const {
     TwitterClient
 } = require('twitter-api-client')
-// const config = require('./config')
 const axios = require('axios')
 const cron = require('node-cron')
 // import * as cron from 'node-cron'
@@ -11,42 +10,51 @@ const twitterClient = new TwitterClient({
     apiKey: process.env.TWITTER_API_KEY,
     apiSecret: process.env.TWITTER_API_SECRET,
     accessToken: process.env.TWITTER_ACCESS_TOKEN,
-    accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET
+    accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
 })
 
-/*  asterisks time divisions; they specify “every minute,” “every hour,” “every day of the month,” “every month,” and “every day of the week,” respectively. */
+const config = {
+    headers: { Authorization: `Bearer ${process.env.TWITTER_BEARER}` }
+};
 
-/* currently runs every day at 2:03 a.m. 
- ** every friday at 4 p.m. use: 0 16 * * friday
- */
-const tweet = cron.schedule('3 2 * * *', () => {
+const bodyParameters = {
+    key: "value"
+};
+
+const tweet = cron.schedule('* 16 * * 6', () => {
     tweetScheduler()
 });
 tweet.start()
 
-// setInterval(tweetScheduler, 100000)
-
-/* setInterval( function(){ 
-    var hour = new Date().getHours();
-    if (hour === 10 || hour === 11 || hour === 3) {
-        tweetScheduler
-    }
-}, 1000000); */
-
 function tweetScheduler() {
-    axios.get('https://statsapi.web.nhl.com/api/v1/draft/prospects')
+    axios.get('https://www.balldontlie.io/api/v1/stats?seasons[]=2021&player_ids[]=145&postseason=false',
+        bodyParameters,
+        config
+    )
         .then(response => {
-            const data = response.data.prospects ? response.data : {}
+            // https://stackoverflow.com/questions/36577205/what-is-the-elegant-way-to-get-the-latest-date-from-array-of-objects-in-client-s 
+
+            /* var mostRecentDate = new Date(Math.max.apply(null, response.data.data[0].map( e => {
+                return new Date(e.game.date);
+             })));
+
+             var mostRecentObject = response.data.data[0].filter( e => { 
+                 var d = new Date( e.game.date ); 
+                 return d.getTime() == mostRecentDate.getTime();
+             })[0]; */
+
+            const data = response.data.data[0] ? response.data : {}
+            // const data = mostRecentObject ? mostRecentObject : {}
             let tweet
             const random = Math.floor(Math.random() * 100);
+            // console.log('data', data.data[0])
 
-            if (data && data.prospects.length) {
-                for (let i = 0; i < data.prospects.length; i++) {
-                    tweet = '🏒  Hockey Prospect Highlight  🏒  ' + data.prospects[i].fullName + ' - ' + data.prospects[i].birthCountry + ' - ' + data.prospects[i].height + ' - ' + data.prospects[i].weight + ' - ' + data.prospects[i].primaryPosition.name + '  🥅  #nhl #hockey #nhlprospects' + random
+            if (data && data.data[0].length) {
+                for (let i = 0; i < data.data[0].length; i++) {
+                    tweet = '  NBA Player Stats 🏀 ' + data.data[0].player.first_name + '' + data.data[0].player.last_name + ' - ' + data.data[0].player.position + `  #nba #basketball ${random} 🏀 ` + data.data[0].team.name
                 }
-                // console.log(data, 'data')
             } else {
-                tweet = 'No prospect today'
+                tweet = '  NBA Player Stats 🏀 ' + data.data[0].player.first_name + '' + data.data[0].player.last_name + ' - ' + data.data[0].player.position + `  #nba #basketball ${random} 🏀 ` + data.data[0].team.name
             }
 
             // send tweet

@@ -1,5 +1,5 @@
 {
-  "name": "rotorink-bot",
+  "name": "nba-tout-bot",
   "version": "1.0.0",
   "description": "hockey twitter bot",
   "main": "index.js",
